@@ -118,7 +118,7 @@ textarea{resize:vertical;min-height:62px;line-height:1.5;}
   display:flex;align-items:center;justify-content:space-between;
   padding:0 36px;
 }
-.cv-hdr-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;z-index:0;}
+/* cv-hdr-bg replaced by inline div background */
 .cv-hdr-name{position:relative;z-index:1;}
 .cv-hdr-name h1{font-size:14.5pt;font-weight:700;color:#1A1A1A;margin:0;line-height:1.2;}
 .cv-hdr-name p{font-size:9.5pt;color:#555;margin:3px 0 0;}
@@ -519,7 +519,7 @@ function updatePreview() {
 
   ge('cvPreview').innerHTML = `<div class="cv-page">
     <div class="cv-hdr">
-      <img src="${IMG_HEADER_B64}" class="cv-hdr-bg" alt="">
+      <div style="position:absolute;inset:0;background:url('${IMG_HEADER_B64}') left center / cover no-repeat;z-index:0;"></div>
       <div class="cv-hdr-name">
         <h1>${esc(s.name)}</h1>
         <p>${esc(s.position)}</p>
@@ -561,8 +561,8 @@ function updatePreview() {
       </div>
     </div>
     <div class="cv-ftr" style="position:relative;overflow:hidden;">
-      <img src="${IMG_FOOTER_B64}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;" alt="">
-      <span style="position:relative;z-index:1;">SevenPro ©</span>
+      <div style="position:absolute;inset:0;background:url('${IMG_FOOTER_B64}') left center / cover no-repeat;z-index:0;"></div>
+      <span style="position:relative;z-index:1;"></span>
       <span style="position:relative;z-index:1;">welcome@seven-pro.com &nbsp;&nbsp; www.seven-pro.com</span>
     </div>
   </div>`;
