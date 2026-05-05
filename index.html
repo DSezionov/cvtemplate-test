@@ -516,8 +516,6 @@ function updatePreview() {
       <strong>${esc(l.language)}:</strong> ${esc(l.level)}
     </div>`).join('');
 
-  // Build logo HTML for CV preview (same SVG but with colored text for white bg)
-  width:auto;filter:brightness(0)" alt="SevenPro">';
 
   ge('cvPreview').innerHTML = `<div class="cv-page">
     <div class="cv-hdr">
@@ -562,8 +560,8 @@ function updatePreview() {
         ${langH}
       </div>
     </div>
-    <div class="cv-ftr" style="position:relative;overflow:hidden;padding:9px 36px;">
-      <img src="${IMG_FOOTER_B64}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;z-index:0;opacity:1;" alt="">
+    <div class="cv-ftr" style="position:relative;overflow:hidden;">
+      <img src="${IMG_FOOTER_B64}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;" alt="">
       <span style="position:relative;z-index:1;">SevenPro ©</span>
       <span style="position:relative;z-index:1;">welcome@seven-pro.com &nbsp;&nbsp; www.seven-pro.com</span>
     </div>
@@ -574,7 +572,7 @@ function updatePreview() {
 async function generateDocx() {
   // Wait up to 5s for Docxtemplater to load
   for (let i = 0; i < 10; i++) {
-    if (typeof docxtemplater !== 'undefined' && typeof PizZip !== 'undefined') break;
+    if (typeof docxtemplater !== 'undefined') break;
     await new Promise(r => setTimeout(r, 500));
   }
   if (typeof docxtemplater === 'undefined') {
