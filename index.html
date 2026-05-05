@@ -175,7 +175,6 @@ const state = {
 // ── Template ──────────────────────────────────────────────────────────────────
 let templateHtml = null;
 let previewTimer = null;
-let currentBlobUrl = null;
 
 async function loadTemplate() {
   try {
@@ -261,9 +260,17 @@ function schedulePreview() {
 function updatePreview() {
   if (!templateHtml) return;
 
-  const filled = renderTemplate(templateHtml, collectData());
-  const blob = new Blob([filled], { type: 'text/html;charset=utf-8' });
-  const newUrl = URL.createObjectURL(blob);
+  // Inject CSS fix for logo + page scaling before rendering
+  const cssInject = `<style>
+    /* Fix logo image background: show original as-is */
+    table.c18 img { display:block; }
+    /* Prevent overflow in narrow iframe */
+    .c36 { max-width:100% !important; }
+  </style>`;
+
+  let filled = renderTemplate(templateHtml, collectData());
+  // Inject CSS right before </head>
+  filled = filled.replace('</head>', cssInject + '</head>');
 
   const wrap = document.getElementById('previewWrap');
   let iframe = document.getElementById('previewFrame');
@@ -272,27 +279,27 @@ function updatePreview() {
     document.getElementById('previewLoading').style.display = 'none';
     iframe = document.createElement('iframe');
     iframe.id = 'previewFrame';
-    iframe.setAttribute('sandbox', 'allow-same-origin allow-popups');
+    // No sandbox: allows Google Fonts and external CSS to load correctly
     wrap.appendChild(iframe);
   }
 
-  const oldUrl = currentBlobUrl;
-  currentBlobUrl = newUrl;
-  iframe.src = newUrl;
+  // srcdoc instead of blob URL — inherits parent origin, fonts load correctly
+  iframe.srcdoc = filled;
 
   iframe.onload = function() {
     try {
       const h = iframe.contentDocument.body.scrollHeight;
-      if (h > 100) iframe.style.height = h + 20 + 'px';
+      if (h > 100) iframe.style.height = (h + 30) + 'px';
     } catch(e){}
-    if (oldUrl) URL.revokeObjectURL(oldUrl);
   };
 }
 
 // ── PDF ───────────────────────────────────────────────────────────────────────
 function generatePdf() {
   if (!templateHtml) { showToast('⏳ Template not loaded yet, please wait…'); return; }
-  const filled = renderTemplate(templateHtml, collectData());
+  let filled = renderTemplate(templateHtml, collectData());
+  // Inject print CSS
+  filled = filled.replace('</head>', '<style>@media print{@page{size:A4;margin:0;}body{-webkit-print-color-adjust:exact;}}</style></head>');
   const win = window.open('', '_blank', 'width=900,height=1200');
   if (!win) { showToast('❌ Pop-up blocked — allow pop-ups for this site'); return; }
   win.document.open();
