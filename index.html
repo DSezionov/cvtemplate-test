@@ -81,47 +81,53 @@ textarea{resize:vertical;min-height:72px;line-height:1.5;}
 .rl{display:flex;flex-direction:column;gap:4px;}
 .ri{display:flex;gap:5px;align-items:center;}
 .ri input{flex:1;}
-/* CV Preview */
-.cv{width:720px;background:#fff;box-shadow:0 4px 32px rgba(0,0,0,.2);border-radius:1px;font-family:var(--f);font-size:10pt;line-height:1.45;color:#1A1A1A;}
-.cv-hdr{display:flex;align-items:center;justify-content:space-between;padding:18px 36px 14px;border-bottom:1.5px solid #E8E8E8;}
-.cv-hdr-name h1{font-size:14pt;font-weight:700;color:#1A1A1A;margin:0 0 3px;}
-.cv-hdr-name p{font-size:10pt;color:#666;margin:0;font-weight:400;}
+/* CV Preview — exact match to template2__2_.docx */
+.cv{width:720px;background:#fff;box-shadow:0 4px 32px rgba(0,0,0,.2);border-radius:1px;font-family:var(--f);color:#1a1a1a;}
+/* Header */
+.cv-hdr{display:flex;align-items:flex-start;justify-content:space-between;padding:18px 36px 14px;border-bottom:1.5px solid #e8e8e8;}
+.cv-hdr-name h1{font-size:14pt;font-weight:700;color:#1a1a1a;margin:0 0 3px;line-height:1.2;}
+.cv-hdr-name p{font-size:11pt;font-weight:400;color:#666666;margin:0;line-height:1.4;}
+.cv-hdr-logo{padding-top:2px;}
 .cv-hdr-logo img{height:28px;width:auto;display:block;}
-.cv-body{padding:18px 36px 28px;}
-.cv-sec{margin-bottom:6px;}
-/* Section titles: Interview/Skills/Exp = 14pt; Education/Cert/Lang = 16pt */
-.cv-sec-title{font-size:14pt;font-weight:700;color:#6B3FA0;margin:0 0 8px;padding-top:10px;}
-.cv-sec-title.lg{font-size:16pt;}
-/* Sub-labels: 12pt, NOT bold, dark — matches "Recruitment feedback:", "Technologies" etc */
-.cv-sublabel{font-size:12pt;font-weight:400;color:#1A1A1A;margin:8px 0 3px;}
-/* Company row */
-.cv-co-row{display:flex;align-items:baseline;gap:8px;margin:10px 0 2px;}
-.cv-company{font-size:12pt;font-weight:700;color:#000000;}
-.cv-date{font-size:10pt;color:#666666;white-space:nowrap;}
-.cv-role{font-size:10pt;color:#434343;margin:0 0 6px;}
-/* Body text */
-.cv-text{font-size:10pt;color:#434343;line-height:1.55;margin-bottom:8px;white-space:pre-wrap;}
-.cv-meta{font-size:10pt;color:#434343;margin-bottom:2px;}
-/* Technologies box */
-.cv-tech{background:#F2F2F2;border:0.5px solid #DEDEDE;border-bottom:2px solid #DEDEDE;padding:6px 10px;font-size:10pt;color:#555555;line-height:1.6;margin-bottom:10px;}
-/* Skills label+items inline */
-.cv-skill-line{font-size:10pt;margin-bottom:4px;}
-.cv-skill-label{font-weight:700;color:#1A1A1A;}
-.cv-skill-items{color:#666666;}
-/* Responsibilities bullets */
-.cv-ul{margin:3px 0 8px 18px;padding:0;}
-.cv-ul li{font-size:10pt;margin-bottom:3px;list-style:disc;color:#434343;}
-/* Project/company blocks */
-.cv-project{padding-bottom:14px;margin-bottom:14px;border-bottom:1px solid #F0F0F0;}
-.cv-project:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
-.cv-co-block{padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid #F0EEFF;}
-.cv-co-block:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
-.cv-section-divider{border:none;border-top:1px solid #DDDDDD;margin:14px 0 4px;}
-/* Education/cert items */
-.cv-institution{font-size:12pt;font-weight:400;color:#1A1A1A;margin:8px 0 2px;}
-.cv-year{font-size:10pt;color:#434343;margin-bottom:2px;}
-.cv-degree{font-size:10pt;color:#434343;margin-bottom:8px;}
-.cv-ftr{border-top:1px solid #E8E8E8;padding:10px 36px;display:flex;justify-content:space-between;align-items:center;font-size:8pt;color:#888;}
+.cv-body{padding:0 36px 28px;}
+/* Section title — Bold 14pt #6b3fa0 — ALL sections (before=16pt after=9pt) */
+.cv-sec-title{font-size:14pt;font-weight:700;color:#6b3fa0;margin:16pt 0 9pt;line-height:1.3;}
+/* SemiBold label 12pt #1a1a1a (before=3pt after=1pt) */
+.cv-sublabel{font-size:12pt;font-weight:600;color:#1a1a1a;margin:3pt 0 1pt;line-height:1.3;}
+/* Regular body 11pt #666666 */
+.cv-text{font-size:11pt;font-weight:400;color:#666666;line-height:1.5;margin:0 0 6pt;white-space:pre-wrap;}
+/* Skills row (before=4pt after=2pt) */
+.cv-skill-line{margin:4pt 0 2pt;line-height:1.4;}
+.cv-skill-lbl{font-size:12pt;font-weight:600;color:#1a1a1a;}
+.cv-skill-val{font-size:11pt;font-weight:400;color:#666666;}
+/* Company row — space-between (company before=12pt) */
+.cv-exp-row{display:flex;justify-content:space-between;align-items:baseline;margin:12pt 0 0;}
+.cv-company{font-size:12pt;font-weight:700;color:#1a1a1a;}
+.cv-date{font-size:11pt;font-weight:400;color:#666666;white-space:nowrap;margin-left:10px;}
+/* Role (before=1pt after=10pt) */
+.cv-role{font-size:11pt;font-weight:400;color:#666666;margin:1pt 0 10pt;}
+/* Technologies box (after=10pt, border all sides #dedede) */
+.cv-tech{background:#f2f2f2;border:0.5pt solid #dedede;padding:5pt 10pt;font-size:11pt;font-weight:400;color:#666666;line-height:1.5;margin:0 0 10pt;}
+/* Bullets (before=2pt after=2pt) */
+.cv-ul{margin:0 0 8pt 18pt;padding:0;}
+.cv-ul li{font-size:11pt;font-weight:400;color:#666666;margin:2pt 0;list-style:disc;}
+/* Project / company blocks */
+.cv-project{padding-bottom:10pt;margin-bottom:4pt;}
+.cv-co-block{padding-bottom:6pt;}
+/* Education/Cert items (school/certName before=4pt after=1pt) */
+.cv-institution{font-size:12pt;font-weight:600;color:#1a1a1a;margin:4pt 0 1pt;line-height:1.3;}
+/* period/degree (after=1pt, 8pt) */
+.cv-period{font-size:11pt;font-weight:400;color:#666666;margin:0 0 1pt;}
+.cv-degree{font-size:11pt;font-weight:400;color:#666666;margin:0 0 8pt;}
+/* year (after=5pt) */
+.cv-year{font-size:11pt;font-weight:400;color:#666666;margin:0 0 5pt;}
+/* Language (before=4pt after=3pt) */
+.cv-lang-row{margin:4pt 0 3pt;line-height:1.4;}
+.cv-lang-name{font-size:12pt;font-weight:600;color:#1a1a1a;}
+.cv-lang-val{font-size:11pt;font-weight:400;color:#666666;}
+/* Divider (matches template empty para with border-bottom) */
+.cv-section-divider{border:none;border-top:1px solid #dddddd;margin:0;}
+.cv-ftr{border-top:1px solid #e8e8e8;padding:10px 36px;display:flex;justify-content:space-between;align-items:center;}
 .toast{position:fixed;bottom:20px;right:20px;background:#1A1A1A;color:#fff;padding:10px 16px;border-radius:8px;font-size:12px;font-family:var(--f);opacity:0;transform:translateY(6px);transition:all .2s;pointer-events:none;z-index:999;max-width:280px;}
 .toast.show{opacity:1;transform:translateY(0);}
 ::-webkit-scrollbar{width:4px;height:4px;}
@@ -295,93 +301,91 @@ let previewTimer=null;
 function schedulePreview(){clearTimeout(previewTimer);previewTimer=setTimeout(buildPreview,300);}
 
 function buildPreview() {
-  const s=state; const dot=a=>(a||[]).filter(Boolean).join(' · ');
+  const s=state;
+  const dot=a=>(a||[]).filter(Boolean).join(' · ');
   let h=`<div class="cv">
   <div class="cv-hdr">
-    <div class="cv-hdr-name"><h1>${esc(s.name)}</h1><p>${esc(s.position)}</p></div>
+    <div class="cv-hdr-name">
+      <h1>${esc(s.name)}</h1>
+      <p>${esc(s.position)}</p>
+    </div>
     <div class="cv-hdr-logo"><img src="${LOGO_SRC}" alt="SevenPro"></div>
-  </div><div class="cv-body">`;
+  </div>
+  <div class="cv-body">`;
 
   // Interview insights
   if (s.show.insights && (s.recruitmentFeedback||s.technicalFeedback)) {
-    h+=`<div class="cv-sec"><div class="cv-sec-title">Interview insights</div>`;
+    h+=`<div class="cv-sec-title">Interview insights</div>`;
     if(s.recruitmentFeedback) h+=`<div class="cv-sublabel">Recruitment feedback:</div><div class="cv-text">${esc(s.recruitmentFeedback)}</div>`;
-    if(s.technicalFeedback)   h+=`<div class="cv-sublabel">Technical feedback:</div><div class="cv-text">${esc(s.technicalFeedback)}</div>`;
-    h+=`</div>`;
+    if(s.technicalFeedback)   h+=`<div class="cv-sublabel">Technical feedback:</div><div class="cv-text" style="margin-bottom:8pt">${esc(s.technicalFeedback)}</div>`;
   }
 
   // Technical skills
   if (s.show.skills && s.technicalSkills.length) {
-    h+=`<hr class="cv-section-divider"><div class="cv-sec"><div class="cv-sec-title">Technical skills</div>
-      <div class="cv-skill-line"><span class="cv-skill-label">Technical Skills:&nbsp;&nbsp;</span><span class="cv-skill-items">${esc(dot(s.technicalSkills))}</span></div>
-    </div>`;
+    h+=`<hr class="cv-section-divider"><div class="cv-sec-title">Technical skills</div>`;
+    h+=`<div class="cv-skill-line"><span class="cv-skill-lbl">Technical Skills:&nbsp;&nbsp;</span><span class="cv-skill-val">${esc(dot(s.technicalSkills))}</span></div>`;
   }
 
   // Professional experience
   if (s.show.experience && s.experiences.length) {
-    h+=`<hr class="cv-section-divider"><div class="cv-sec"><div class="cv-sec-title">Professional experience</div>`;
+    h+=`<hr class="cv-section-divider"><div class="cv-sec-title">Professional experience</div>`;
     s.experiences.forEach(co=>{
-      h+=`<div class="cv-co-block"><div class="cv-company">${esc(co.company)}</div>`;
       (co.projects||[]).forEach(p=>{
-        h+=`<div class="cv-project">
-          <div class="cv-co-row"><span class="cv-date">${esc(p.dateRange)}</span></div>
+        h+=`<div class="cv-co-block">
+          <div class="cv-exp-row">
+            <span class="cv-company">${esc(co.company)}</span>
+            <span class="cv-date">${esc(p.dateRange)}</span>
+          </div>
           <div class="cv-role">${esc(p.role)}</div>`;
         if(p.description){
           h+=`<div class="cv-sublabel">Project Description</div>
-              <div class="cv-text">${esc(p.description)}</div>`;
+              <div class="cv-text" style="margin-bottom:10pt">${esc(p.description)}</div>`;
         }
         if(p.technologies.length){
-          h+=`<div class="cv-sublabel">Technologies</div>
+          h+=`<div class="cv-sublabel" style="margin-bottom:3pt">Technologies</div>
               <div class="cv-tech">${esc(dot(p.technologies))}</div>`;
         }
         const rs=(p.responsibilities||[]).filter(r=>r.trim());
         if(rs.length){
-          h+=`<div class="cv-sublabel">Responsibilities</div><ul class="cv-ul">`;
+          h+=`<div class="cv-sublabel" style="margin-bottom:3pt">Responsibilities</div>
+              <ul class="cv-ul">`;
           rs.forEach(r=>{h+=`<li>${esc(r)}</li>`;});
           h+=`</ul>`;
         }
         h+=`</div>`;
       });
-      h+=`</div>`;
     });
-    h+=`</div>`;
   }
 
   // Education
   if (s.show.education && s.education.length) {
-    h+=`<hr class="cv-section-divider"><div class="cv-sec"><div class="cv-sec-title lg">Education</div>`;
+    h+=`<hr class="cv-section-divider"><div class="cv-sec-title">Education</div>`;
     s.education.forEach(e=>{
-      h+=`<div style="margin-bottom:12px">
-        <div class="cv-institution">${esc(e.school)}</div>
-        <div class="cv-year">${esc(e.period)}</div>
-        <div class="cv-degree">${esc(e.degree)}</div>
-      </div>`;
+      h+=`<div class="cv-institution">${esc(e.school)}</div>
+          <div class="cv-period">${esc(e.period)}</div>
+          <div class="cv-degree">${esc(e.degree)}</div>`;
     });
-    h+=`</div>`;
   }
 
   // Certifications
   if (s.show.certifications && s.certifications.length) {
-    h+=`<hr class="cv-section-divider"><div class="cv-sec"><div class="cv-sec-title lg">Certification</div>`;
+    h+=`<hr class="cv-section-divider"><div class="cv-sec-title">Certification</div>`;
     s.certifications.forEach(c=>{
-      h+=`<div style="margin-bottom:8px">
-        <div class="cv-institution">${esc(c.certName)}</div>
-        <div class="cv-year">${esc(c.year)}</div>
-      </div>`;
+      h+=`<div class="cv-institution">${esc(c.certName)}</div>
+          <div class="cv-year">${esc(c.year)}</div>`;
     });
-    h+=`</div>`;
   }
 
   // Languages
   if (s.show.languages && s.languages.length) {
-    h+=`<hr class="cv-section-divider"><div class="cv-sec"><div class="cv-sec-title lg">Languages</div>`;
+    h+=`<hr class="cv-section-divider"><div class="cv-sec-title">Languages</div>`;
     s.languages.forEach(l=>{
-      h+=`<div class="cv-skill-line"><span class="cv-skill-label">${esc(l.language)}:</span> <span class="cv-text" style="display:inline;margin:0">${esc(l.level)}</span></div>`;
+      h+=`<div class="cv-lang-row"><span class="cv-lang-name">${esc(l.language)}:&nbsp;</span><span class="cv-lang-val">${esc(l.level)}</span></div>`;
     });
-    h+=`</div>`;
   }
 
-  h+=`</div><div class="cv-ftr">
+  h+=`</div>
+  <div class="cv-ftr">
     <img src="${LOGO_SRC}" alt="SevenPro" style="height:18px;width:auto;">
     <div style="text-align:right;font-size:8pt;color:#888;line-height:1.6;">welcome@seven-pro.com<br>www.seven-pro.com</div>
   </div></div>`;
