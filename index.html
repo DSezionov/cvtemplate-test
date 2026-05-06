@@ -127,6 +127,10 @@ textarea{resize:vertical;min-height:72px;line-height:1.5;}
 .cv-lang-val{font-size:11pt;font-weight:400;color:#666666;}
 /* Divider (matches template empty para with border-bottom) */
 .cv-section-divider{border:none;border-top:1px solid #dddddd;margin:0;}
+/* Between projects within the same company — subtle dashed */
+.cv-proj-divider{border:none;border-top:1px dashed #e8e8e8;margin:12pt 0 0;}
+/* Between different companies — more prominent */
+.cv-co-divider{border:none;border-top:1.5px solid #d0d0d0;margin:18pt 0 0;}
 .cv-ftr{border-top:1px solid #e8e8e8;padding:10px 36px;display:flex;justify-content:space-between;align-items:center;}
 .toast{position:fixed;bottom:20px;right:20px;background:#1A1A1A;color:#fff;padding:10px 16px;border-radius:8px;font-size:12px;font-family:var(--f);opacity:0;transform:translateY(6px);transition:all .2s;pointer-events:none;z-index:999;max-width:280px;}
 .toast.show{opacity:1;transform:translateY(0);}
@@ -329,14 +333,30 @@ function buildPreview() {
   // Professional experience
   if (s.show.experience && s.experiences.length) {
     h+=`<hr class="cv-section-divider"><div class="cv-sec-title">Professional experience</div>`;
-    s.experiences.forEach(co=>{
-      (co.projects||[]).forEach(p=>{
-        h+=`<div class="cv-co-block">
-          <div class="cv-exp-row">
+    s.experiences.forEach((co,ci)=>{
+      // Divider BETWEEN companies (not before the first one)
+      if(ci>0) h+=`<hr class="cv-co-divider">`;
+
+      (co.projects||[]).forEach((p,pi)=>{
+        // Divider BETWEEN projects within same company (not before the first project)
+        if(pi>0) h+=`<hr class="cv-proj-divider">`;
+
+        h+=`<div class="cv-co-block">`;
+
+        // Company name only on FIRST project of this company
+        if(pi===0){
+          h+=`<div class="cv-exp-row">
             <span class="cv-company">${esc(co.company)}</span>
             <span class="cv-date">${esc(p.dateRange)}</span>
-          </div>
-          <div class="cv-role">${esc(p.role)}</div>`;
+          </div>`;
+        } else {
+          // Subsequent projects: date right-aligned, no company name
+          h+=`<div style="text-align:right;margin-top:4pt;">
+            <span class="cv-date">${esc(p.dateRange)}</span>
+          </div>`;
+        }
+
+        h+=`<div class="cv-role">${esc(p.role)}</div>`;
         if(p.description){
           h+=`<div class="cv-sublabel">Project Description</div>
               <div class="cv-text" style="margin-bottom:10pt">${esc(p.description)}</div>`;
