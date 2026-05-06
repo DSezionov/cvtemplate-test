@@ -463,7 +463,10 @@ function mkTags(wrap, arr, onChange) {
     if ((ev.key==='Enter'||ev.key===',') && inp.value.trim()) {
       ev.preventDefault();
       const v = inp.value.replace(/,$/,'').trim();
-      if (v) { arr.push(v); onChange(arr); mkTags(wrap,arr,onChange); }
+      if (v) {
+        inp.value = ''; // clear BEFORE mkTags — prevents onblur double-fire
+        arr.push(v); onChange(arr); mkTags(wrap,arr,onChange);
+      }
     }
     if (ev.key==='Backspace' && !inp.value && arr.length) {
       arr.pop(); onChange(arr); mkTags(wrap,arr,onChange);
