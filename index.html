@@ -216,8 +216,8 @@ function collectData() {
     candidateName:       state.name || '',
     position:            state.position || '',
     // Use \n in feedback — docxtemplater linebreaks:true converts to DOCX line breaks
-    recruitmentFeedback: sh.insights ? (state.recruitmentFeedback || '') : '',
-    technicalFeedback:   sh.insights ? (state.technicalFeedback   || '') : '',
+    recruitmentFeedback: sh.insights ? stripBold(state.recruitmentFeedback || '') : '',
+    technicalFeedback:   sh.insights ? stripBold(state.technicalFeedback   || '') : '',
     skillGroups: sh.skills && state.technicalSkills.length
       ? [{label:'Technical Skills', items: dot(state.technicalSkills)}]
       : [],
@@ -228,7 +228,7 @@ function collectData() {
             company:     co.company || '',
             dateRange:   p.dateRange || '',
             role:        p.role || '',
-            description: p.description || '',
+            description: stripBold(p.description || ''),
             technologies: dot(p.technologies),
             responsibilities: (p.responsibilities||[]).filter(r=>r.trim())
           }))
@@ -284,23 +284,106 @@ async function genDocx() {
 // PDF
 // ─────────────────────────────────────────────────────────────────────────────
 function genPdf() {
-  const el = document.getElementById('cvOut');
-  if (!el||!el.firstElementChild) { showToast('❌ Nothing to export'); return; }
-  if (typeof html2pdf==='undefined') { showToast('❌ html2pdf not loaded'); return; }
-  showToast('⏳ Generating PDF…');
-  const name = (state.name||'CV').replace(/[^\w\s\-]/g,'');
-  const orig = el.style.width; el.style.width='794px';
-  html2pdf().set({margin:[10,10,10,10],filename:name+'.pdf',
-    image:{type:'jpeg',quality:.98},
-    html2canvas:{scale:2,useCORS:true,logging:false},
-    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
-  }).from(el.firstElementChild).save().then(()=>{el.style.width=orig;showToast('✅ PDF downloaded!');});
+  buildPreview();
+  const cvEl = document.querySelector('#cvOut .cv');
+  if (!cvEl) { showToast('❌ Nothing to export'); return; }
+
+  // Extract CV preview CSS from the page
+  const cvStyles = Array.from(document.styleSheets)
+    .flatMap(ss => { try { return Array.from(ss.cssRules); } catch { return []; }})
+    .filter(r => r.cssText && (
+      r.cssText.includes('.cv') ||
+      r.cssText.includes('@font-face') ||
+      r.cssText.startsWith('*') ||
+      r.cssText.includes('font-family')
+    ))
+    .map(r => r.cssText)
+    .join('\n');
+
+  const printHtml = `<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  ${cvStyles}
+
+  /* ── Print overrides ── */
+  *, *::before, *::after { box-sizing: border-box; }
+  @page { size: A4; margin: 18mm 15mm 28mm 15mm; }
+  html, body { margin: 0; padding: 0; background: white; font-family: 'Montserrat', sans-serif; }
+
+  .cv {
+    width: 100% !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    color: #1a1a1a;
+  }
+  .cv-hdr { padding: 0 0 14px !important; }
+  .cv-body { padding: 0 0 8mm !important; }
+
+  /* Footer fixed at bottom of EVERY page */
+  .cv-print-ftr {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #e8e8e8;
+    background: white;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 8pt;
+    color: #888;
+    padding: 0 15mm;
+  }
+  .cv-print-ftr img { height: 14px; width: auto; }
+
+  /* Page break rules */
+  .cv-sec-title          { page-break-after: avoid; break-after: avoid; }
+  .cv-sublabel           { page-break-after: avoid; break-after: avoid; }
+  .cv-sublabel + *       { page-break-before: avoid; break-before: avoid; }
+  .cv-co-block           { page-break-inside: avoid; break-inside: avoid; }
+  .cv-project            { page-break-inside: avoid; break-inside: avoid; }
+  .cv-ul                 { page-break-inside: avoid; break-inside: avoid; }
+  .cv-section-divider    { page-break-after: avoid; break-after: avoid; }
+  .cv-tech               { page-break-inside: avoid; break-inside: avoid; }
+  strong                 { font-weight: 700; }
+</style>
+</head>
+<body>
+${cvEl.outerHTML.replace('class="cv"','class="cv" style=""')}
+<div class="cv-print-ftr">
+  <img src="${LOGO_SRC}" alt="SevenPro">
+  <span>welcome@seven-pro.com &nbsp;&nbsp; www.seven-pro.com</span>
+</div>
+</body></html>`;
+
+  const win = window.open('', '_blank', 'width=900,height=700');
+  if (!win) { showToast('❌ Pop-ups blocked — please allow pop-ups'); return; }
+  win.document.open();
+  win.document.write(printHtml);
+  win.document.close();
+  win.addEventListener('load', () => setTimeout(() => {
+    win.focus();
+    win.print();
+  }, 900));
+  showToast('⏳ Opening print dialog…');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PREVIEW
 // ─────────────────────────────────────────────────────────────────────────────
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+// renderText: supports **bold** markdown + preserves line breaks
+function renderText(s){
+  if(!s) return '';
+  return esc(s)
+    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+    .replace(/\n/g,'<br>');
+}
+// stripBold: removes **markers** for clean DOCX output
+function stripBold(s){ return s ? s.replace(/\*\*([^*]+)\*\*/g,'$1') : ''; }
 let previewTimer=null;
 function schedulePreview(){clearTimeout(previewTimer);previewTimer=setTimeout(buildPreview,300);}
 
@@ -320,14 +403,20 @@ function buildPreview() {
   // Interview insights
   if (s.show.insights && (s.recruitmentFeedback||s.technicalFeedback)) {
     h+=`<div class="cv-sec-title">Interview insights</div>`;
-    if(s.recruitmentFeedback) h+=`<div class="cv-sublabel">Recruitment feedback:</div><div class="cv-text">${esc(s.recruitmentFeedback)}</div>`;
-    if(s.technicalFeedback)   h+=`<div class="cv-sublabel">Technical feedback:</div><div class="cv-text" style="margin-bottom:8pt">${esc(s.technicalFeedback)}</div>`;
+    if(s.recruitmentFeedback) h+=`<div class="cv-sublabel">Recruitment feedback:</div><div class="cv-text" style="margin-bottom:14pt">${renderText(s.recruitmentFeedback)}</div>`;
+    if(s.technicalFeedback)   h+=`<div class="cv-sublabel">Technical feedback:</div><div class="cv-text" style="margin-bottom:8pt">${renderText(s.technicalFeedback)}</div>`;
   }
 
-  // Technical skills
-  if (s.show.skills && s.technicalSkills.length) {
+  // Technical skills — items in gray box, no redundant label
+  if (s.show.skills && s.skillGroups && s.skillGroups.length) {
     h+=`<hr class="cv-section-divider"><div class="cv-sec-title">Technical skills</div>`;
-    h+=`<div class="cv-skill-line"><span class="cv-skill-lbl">Technical Skills:&nbsp;&nbsp;</span><span class="cv-skill-val">${esc(dot(s.technicalSkills))}</span></div>`;
+    s.skillGroups.forEach(g=>{
+      h+=`<div class="cv-skill-line"><span class="cv-skill-lbl">${esc(g.label)}:&nbsp;&nbsp;</span></div>`;
+      h+=`<div class="cv-tech" style="margin-bottom:8pt">${esc(dot(g.items))}</div>`;
+    });
+  } else if (s.show.skills && s.technicalSkills && s.technicalSkills.length) {
+    h+=`<hr class="cv-section-divider"><div class="cv-sec-title">Technical skills</div>`;
+    h+=`<div class="cv-tech" style="margin-bottom:8pt">${esc(dot(s.technicalSkills))}</div>`;
   }
 
   // Professional experience
@@ -359,7 +448,7 @@ function buildPreview() {
         h+=`<div class="cv-role">${esc(p.role)}</div>`;
         if(p.description){
           h+=`<div class="cv-sublabel">Project Description</div>
-              <div class="cv-text" style="margin-bottom:10pt">${esc(p.description)}</div>`;
+              <div class="cv-text" style="margin-bottom:10pt">${renderText(p.description)}</div>`;
         }
         if(p.technologies.length){
           h+=`<div class="cv-sublabel" style="margin-bottom:3pt">Technologies</div>
@@ -369,7 +458,7 @@ function buildPreview() {
         if(rs.length){
           h+=`<div class="cv-sublabel" style="margin-bottom:3pt">Responsibilities</div>
               <ul class="cv-ul">`;
-          rs.forEach(r=>{h+=`<li>${esc(r)}</li>`;});
+          rs.forEach(r=>{h+=`<li>${renderText(r)}</li>`;});
           h+=`</ul>`;
         }
         h+=`</div>`;
@@ -665,7 +754,7 @@ function buildForm(){
     <div class="field">
       <label>Recruitment Feedback</label>
       <textarea rows="4" oninput="state.recruitmentFeedback=this.value;schedulePreview()">${esc(state.recruitmentFeedback)}</textarea>
-      <div class="hint">Enter creates a new line in the DOCX output</div>
+      <div class="hint">Enter = new line &nbsp;·&nbsp; <strong>**bold text**</strong> = bold in preview/PDF</div>
     </div>
     <div class="field">
       <label>Technical Feedback</label>
