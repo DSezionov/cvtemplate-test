@@ -285,56 +285,62 @@ async function genDocx() {
 // ─────────────────────────────────────────────────────────────────────────────
 async function genPdf() {
   buildPreview();
-  await new Promise(r => setTimeout(r, 120));
+  await new Promise(r => setTimeout(r, 150));
 
   const cvEl = document.querySelector('#cvOut .cv');
   if (!cvEl) { showToast('❌ Nothing to export'); return; }
   if (typeof html2pdf === 'undefined') { showToast('❌ html2pdf not loaded'); return; }
   showToast('⏳ Generating PDF…');
 
-  const name = (state.name || 'CV').replace(/[^\w\s\-]/g, '');
+  const pdfName   = (state.name || 'CV').replace(/[^\w\s\-]/g, '');
+  const SIDE_M    = 14;               // mm left/right margin
+  const CONTENT_W = 210 - 2 * SIDE_M; // 182 mm
 
-  // Clone CV, strip header and footer — both are redrawn per-page via jsPDF
-  const clone = cvEl.cloneNode(true);
-  const inlineFtr = clone.querySelector('.cv-ftr');
-  if (inlineFtr) inlineFtr.remove();
-  const inlineHdr = clone.querySelector('.cv-hdr');
-  if (inlineHdr) inlineHdr.remove();
+  // Pre-render the HTML header and footer through html2canvas so that
+  // Montserrat and all CSS padding are captured exactly as in the preview.
+  // This also makes left-alignment identical to the body content automatically.
+  const hdrEl = document.querySelector('#cvOut .cv-hdr');
+  const ftrEl = document.querySelector('#cvOut .cv-ftr');
+  const canvasOpts = { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff', logging: false };
+  const [hdrCanvas, ftrCanvas] = await Promise.all([
+    html2canvas(hdrEl, canvasOpts),
+    html2canvas(ftrEl, canvasOpts)
+  ]);
+  const hdrDataUrl = hdrCanvas.toDataURL('image/png');
+  const ftrDataUrl = ftrCanvas.toDataURL('image/png');
 
-  // Keep CV at its designed width so header/footer layout matches the preview exactly
-  clone.style.cssText = 'width:720px;box-shadow:none;border-radius:0;background:#fff;';
+  // Convert canvas pixels → mm.
+  // The .cv is 720 px wide; at scale 2 hdrCanvas.width = 1440 px = CONTENT_W mm.
+  const px2mm = CONTENT_W / hdrCanvas.width;
+  const hdrH  = hdrCanvas.height * px2mm;
+  const ftrH  = ftrCanvas.height * px2mm;
+  const GAP   = 2; // mm breathing room between stamp and body text
+  const topM  = Math.ceil(hdrH) + GAP;
+  const botM  = Math.ceil(ftrH) + GAP;
+
+  // Clone CV body — strip header and footer, they are stamped per-page from canvas images.
+  const clone    = cvEl.cloneNode(true);
+  const cloneHdr = clone.querySelector('.cv-hdr'); if (cloneHdr) cloneHdr.remove();
+  const cloneFtr = clone.querySelector('.cv-ftr'); if (cloneFtr) cloneFtr.remove();
+  clone.style.cssText    = 'width:720px;box-shadow:none;border-radius:0;background:#fff;';
   clone.style.fontFamily = "'Montserrat', sans-serif";
 
-  // Grab logo aspect ratio from the already-loaded preview image for the PDF footer
-  const logoEl = document.querySelector('#cvOut .cv-hdr-logo img');
-  const logoAspect = (logoEl && logoEl.naturalWidth && logoEl.naturalHeight)
-    ? logoEl.naturalWidth / logoEl.naturalHeight
-    : 3.5;
-
-  // Place off-screen so html2canvas can measure it
   const wrap = document.createElement('div');
   wrap.style.cssText = 'position:fixed;top:-99999px;left:0;width:720px;z-index:-1;';
   wrap.appendChild(clone);
   document.body.appendChild(wrap);
 
-  const logoSrc      = LOGO_SRC;          // captured for use in then()
-  const candidateName = state.name || '';
-  const candidatePos  = state.position || '';
-
   try {
     await html2pdf()
       .set({
-        margin:    [22, 14, 20, 14],   // top 22mm = room for jsPDF header; bottom 20mm = room for footer
-        filename:  name + '.pdf',
-        image:     { type: 'jpeg', quality: 0.99 },
+        margin:   [topM, SIDE_M, botM, SIDE_M],
+        filename: pdfName + '.pdf',
+        image:    { type: 'jpeg', quality: 0.99 },
         html2canvas: {
-          scale: 2,
-          useCORS: true,
-          logging: false,
-          backgroundColor: '#ffffff',
-          // Force background colors to render (fixes gray boxes)
-          onclone: (clonedDoc) => {
-            clonedDoc.querySelectorAll('.cv-tech').forEach(el => {
+          scale: 2, useCORS: true, allowTaint: true,
+          backgroundColor: '#ffffff', logging: false,
+          onclone: (doc) => {
+            doc.querySelectorAll('.cv-tech').forEach(el => {
               el.style.backgroundColor = '#f2f2f2';
               el.style.background      = '#f2f2f2';
             });
@@ -342,7 +348,6 @@ async function genPdf() {
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: {
-          // Avoid cutting these elements across pages
           avoid: ['.cv-co-block', '.cv-project', '.cv-tech', '.cv-ul',
                   '.cv-sublabel', '.cv-institution', '.cv-lang-row']
         }
@@ -354,48 +359,12 @@ async function genPdf() {
         const n  = pdf.internal.getNumberOfPages();
         const pw = pdf.internal.pageSize.getWidth();
         const ph = pdf.internal.pageSize.getHeight();
-
         for (let i = 1; i <= n; i++) {
           pdf.setPage(i);
-
-          // ── Header ────────────────────────────────────────────────────────
-          // Logo — right-aligned, vertically aligned with the name baseline
-          const hh = 6, hw = hh * logoAspect;
-          pdf.addImage(logoSrc, 'PNG', pw - 14 - hw, 3, hw, hh);
-
-          // Candidate name
-          pdf.setFont('helvetica', 'bold');
-          pdf.setFontSize(9);
-          pdf.setTextColor(26, 26, 26);
-          pdf.text(candidateName, 14, 9);
-
-          // Position / title
-          pdf.setFont('helvetica', 'normal');
-          pdf.setFontSize(7.5);
-          pdf.setTextColor(102, 102, 102);
-          pdf.text(candidatePos, 14, 14);
-
-          // Header separator line
-          pdf.setDrawColor(232, 232, 232);
-          pdf.setLineWidth(0.4);
-          pdf.line(14, 19, pw - 14, 19);
-
-          // ── Footer ────────────────────────────────────────────────────────
-          // Footer separator line
-          pdf.setDrawColor(220, 220, 220);
-          pdf.setLineWidth(0.3);
-          pdf.line(14, ph - 13, pw - 14, ph - 13);
-
-          // Contact info (right side) — two lines
-          pdf.setFont('helvetica', 'normal');
-          pdf.setFontSize(7.5);
-          pdf.setTextColor(136, 136, 136);
-          pdf.text('welcome@seven-pro.com', pw - 14, ph - 9.5, { align: 'right' });
-          pdf.text('www.seven-pro.com',     pw - 14, ph - 6.5, { align: 'right' });
-
-          // Logo (left side) — 6 mm tall, centred with the two contact lines
-          const lh = 6, lw = lh * logoAspect;
-          pdf.addImage(logoSrc, 'PNG', 14, ph - 11, lw, lh);
+          // Header canvas image: placed in the top margin area, full content width
+          pdf.addImage(hdrDataUrl, 'PNG', SIDE_M, 0, CONTENT_W, hdrH);
+          // Footer canvas image: placed in the bottom margin area
+          pdf.addImage(ftrDataUrl, 'PNG', SIDE_M, ph - ftrH, CONTENT_W, ftrH);
         }
       })
       .save();
