@@ -299,13 +299,19 @@ async function genPdf() {
   const inlineFtr = clone.querySelector('.cv-ftr');
   if (inlineFtr) inlineFtr.remove();
 
-  // Force exact widths & remove screen-only decoration
-  clone.style.cssText = 'width:794px;box-shadow:none;border-radius:0;background:#fff;';
+  // Keep CV at its designed width so header/footer layout matches the preview exactly
+  clone.style.cssText = 'width:720px;box-shadow:none;border-radius:0;background:#fff;';
   clone.style.fontFamily = "'Montserrat', sans-serif";
+
+  // Grab logo aspect ratio from the already-loaded preview image for the PDF footer
+  const logoEl = document.querySelector('#cvOut .cv-hdr-logo img');
+  const logoAspect = (logoEl && logoEl.naturalWidth && logoEl.naturalHeight)
+    ? logoEl.naturalWidth / logoEl.naturalHeight
+    : 3.5;
 
   // Place off-screen so html2canvas can measure it
   const wrap = document.createElement('div');
-  wrap.style.cssText = 'position:fixed;top:-99999px;left:0;width:794px;z-index:-1;';
+  wrap.style.cssText = 'position:fixed;top:-99999px;left:0;width:720px;z-index:-1;';
   wrap.appendChild(clone);
   document.body.appendChild(wrap);
 
@@ -353,17 +359,17 @@ async function genPdf() {
           pdf.setLineWidth(0.3);
           pdf.line(14, ph - 13, pw - 14, ph - 13);
 
-          // Contact info (right side)
+          // Contact info (right side) — two lines matching the preview footer
           pdf.setFont('helvetica', 'normal');
           pdf.setFontSize(7.5);
           pdf.setTextColor(136, 136, 136);
-          pdf.text('welcome@seven-pro.com    www.seven-pro.com', pw - 14, ph - 8, { align: 'right' });
+          pdf.text('welcome@seven-pro.com', pw - 14, ph - 9.5, { align: 'right' });
+          pdf.text('www.seven-pro.com',     pw - 14, ph - 6.5, { align: 'right' });
 
-          // SEVENPRO brand (left side) — purple bold
-          pdf.setFont('helvetica', 'bold');
-          pdf.setFontSize(7.5);
-          pdf.setTextColor(107, 63, 160);
-          pdf.text('SEVENPRO', 14, ph - 8);
+          // Logo (left side) — actual image, vertically centred with the contact block
+          const lh = 4;
+          const lw = lh * logoAspect;
+          pdf.addImage(logoSrc, 'PNG', 14, ph - 11, lw, lh);
         }
       })
       .save();
