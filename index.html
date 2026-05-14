@@ -126,11 +126,11 @@ textarea{resize:vertical;min-height:72px;line-height:1.5;}
 .cv-lang-name{font-size:12pt;font-weight:600;color:#1a1a1a;}
 .cv-lang-val{font-size:11pt;font-weight:400;color:#666666;}
 /* Divider (matches template empty para with border-bottom) */
-.cv-section-divider{border:none;border-top:1px solid #dddddd;margin:0;}
+.cv-section-divider{border:none;border-top:1px solid #dddddd;margin:0 -36px;}
 /* Between projects within the same company — subtle dashed */
-.cv-proj-divider{border:none;border-top:1px dashed #e8e8e8;margin:12pt 0 0;}
+.cv-proj-divider{border:none;border-top:1px dashed #e8e8e8;margin:12pt -36px 0;}
 /* Between different companies — more prominent */
-.cv-co-divider{border:none;border-top:1.5px solid #d0d0d0;margin:18pt 0 0;}
+.cv-co-divider{border:none;border-top:1.5px solid #d0d0d0;margin:18pt -36px 0;}
 .cv-ftr{border-top:1px solid #e8e8e8;padding:10px 36px;display:flex;justify-content:space-between;align-items:center;}
 .toast{position:fixed;bottom:20px;right:20px;background:#1A1A1A;color:#fff;padding:10px 16px;border-radius:8px;font-size:12px;font-family:var(--f);opacity:0;transform:translateY(6px);transition:all .2s;pointer-events:none;z-index:999;max-width:280px;}
 .toast.show{opacity:1;transform:translateY(0);}
@@ -294,10 +294,12 @@ async function genPdf() {
 
   const name = (state.name || 'CV').replace(/[^\w\s\-]/g, '');
 
-  // Clone CV, strip the inline footer (we add it per-page via jsPDF)
+  // Clone CV, strip header and footer — both are redrawn per-page via jsPDF
   const clone = cvEl.cloneNode(true);
   const inlineFtr = clone.querySelector('.cv-ftr');
   if (inlineFtr) inlineFtr.remove();
+  const inlineHdr = clone.querySelector('.cv-hdr');
+  if (inlineHdr) inlineHdr.remove();
 
   // Keep CV at its designed width so header/footer layout matches the preview exactly
   clone.style.cssText = 'width:720px;box-shadow:none;border-radius:0;background:#fff;';
@@ -315,12 +317,14 @@ async function genPdf() {
   wrap.appendChild(clone);
   document.body.appendChild(wrap);
 
-  const logoSrc = LOGO_SRC; // captured for use in then()
+  const logoSrc      = LOGO_SRC;          // captured for use in then()
+  const candidateName = state.name || '';
+  const candidatePos  = state.position || '';
 
   try {
     await html2pdf()
       .set({
-        margin:    [14, 14, 20, 14],   // top/right/bottom/left in mm — bottom leaves room for footer
+        margin:    [22, 14, 20, 14],   // top 22mm = room for jsPDF header; bottom 20mm = room for footer
         filename:  name + '.pdf',
         image:     { type: 'jpeg', quality: 0.99 },
         html2canvas: {
@@ -354,21 +358,43 @@ async function genPdf() {
         for (let i = 1; i <= n; i++) {
           pdf.setPage(i);
 
+          // ── Header ────────────────────────────────────────────────────────
+          // Logo — right-aligned, vertically aligned with the name baseline
+          const hh = 6, hw = hh * logoAspect;
+          pdf.addImage(logoSrc, 'PNG', pw - 14 - hw, 3, hw, hh);
+
+          // Candidate name
+          pdf.setFont('helvetica', 'bold');
+          pdf.setFontSize(9);
+          pdf.setTextColor(26, 26, 26);
+          pdf.text(candidateName, 14, 9);
+
+          // Position / title
+          pdf.setFont('helvetica', 'normal');
+          pdf.setFontSize(7.5);
+          pdf.setTextColor(102, 102, 102);
+          pdf.text(candidatePos, 14, 14);
+
+          // Header separator line
+          pdf.setDrawColor(232, 232, 232);
+          pdf.setLineWidth(0.4);
+          pdf.line(14, 19, pw - 14, 19);
+
+          // ── Footer ────────────────────────────────────────────────────────
           // Footer separator line
           pdf.setDrawColor(220, 220, 220);
           pdf.setLineWidth(0.3);
           pdf.line(14, ph - 13, pw - 14, ph - 13);
 
-          // Contact info (right side) — two lines matching the preview footer
+          // Contact info (right side) — two lines
           pdf.setFont('helvetica', 'normal');
           pdf.setFontSize(7.5);
           pdf.setTextColor(136, 136, 136);
           pdf.text('welcome@seven-pro.com', pw - 14, ph - 9.5, { align: 'right' });
           pdf.text('www.seven-pro.com',     pw - 14, ph - 6.5, { align: 'right' });
 
-          // Logo (left side) — actual image, vertically centred with the contact block
-          const lh = 4;
-          const lw = lh * logoAspect;
+          // Logo (left side) — 6 mm tall, centred with the two contact lines
+          const lh = 6, lw = lh * logoAspect;
           pdf.addImage(logoSrc, 'PNG', 14, ph - 11, lw, lh);
         }
       })
