@@ -107,7 +107,7 @@ textarea{resize:vertical;min-height:72px;line-height:1.5;}
 /* Role (before=1pt after=10pt) */
 .cv-role{font-size:11pt;font-weight:400;color:#666666;margin:1pt 0 10pt;}
 /* Technologies box (after=10pt, border all sides #dedede) */
-.cv-tech{background:#f2f2f2;border:0.5pt solid #dedede;padding:5pt 10pt;font-size:11pt;font-weight:400;color:#666666;line-height:1.5;margin:0 0 10pt;}
+.cv-tech{background:#f2f2f2 !important;border:0.5pt solid #dedede;padding:5pt 10pt;font-size:11pt;font-weight:400;color:#666666;line-height:1.5;margin:0 0 10pt;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
 /* Bullets (before=2pt after=2pt) */
 .cv-ul{margin:0 0 8pt 18pt;padding:0;}
 .cv-ul li{font-size:11pt;font-weight:400;color:#666666;margin:2pt 0;list-style:disc;}
@@ -216,8 +216,8 @@ function collectData() {
     candidateName:       state.name || '',
     position:            state.position || '',
     // Use \n in feedback — docxtemplater linebreaks:true converts to DOCX line breaks
-    recruitmentFeedback: sh.insights ? stripBold(state.recruitmentFeedback || '') : '',
-    technicalFeedback:   sh.insights ? stripBold(state.technicalFeedback   || '') : '',
+    recruitmentFeedback: sh.insights ? (state.recruitmentFeedback || '') : '',
+    technicalFeedback:   sh.insights ? (state.technicalFeedback   || '') : '',
     skillGroups: sh.skills && state.technicalSkills.length
       ? [{label:'Technical Skills', items: dot(state.technicalSkills)}]
       : [],
@@ -228,7 +228,7 @@ function collectData() {
             company:     co.company || '',
             dateRange:   p.dateRange || '',
             role:        p.role || '',
-            description: stripBold(p.description || ''),
+            description: p.description || '',
             technologies: dot(p.technologies),
             responsibilities: (p.responsibilities||[]).filter(r=>r.trim())
           }))
@@ -283,107 +283,106 @@ async function genDocx() {
 // ─────────────────────────────────────────────────────────────────────────────
 // PDF
 // ─────────────────────────────────────────────────────────────────────────────
-function genPdf() {
+async function genPdf() {
   buildPreview();
+  await new Promise(r => setTimeout(r, 120));
+
   const cvEl = document.querySelector('#cvOut .cv');
   if (!cvEl) { showToast('❌ Nothing to export'); return; }
+  if (typeof html2pdf === 'undefined') { showToast('❌ html2pdf not loaded'); return; }
+  showToast('⏳ Generating PDF…');
 
-  // Extract CV preview CSS from the page
-  const cvStyles = Array.from(document.styleSheets)
-    .flatMap(ss => { try { return Array.from(ss.cssRules); } catch { return []; }})
-    .filter(r => r.cssText && (
-      r.cssText.includes('.cv') ||
-      r.cssText.includes('@font-face') ||
-      r.cssText.startsWith('*') ||
-      r.cssText.includes('font-family')
-    ))
-    .map(r => r.cssText)
-    .join('\n');
+  const name = (state.name || 'CV').replace(/[^\w\s\-]/g, '');
 
-  const printHtml = `<!DOCTYPE html>
-<html><head>
-<meta charset="UTF-8">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
-<style>
-  ${cvStyles}
+  // Clone CV, strip the inline footer (we add it per-page via jsPDF)
+  const clone = cvEl.cloneNode(true);
+  const inlineFtr = clone.querySelector('.cv-ftr');
+  if (inlineFtr) inlineFtr.remove();
 
-  /* ── Print overrides ── */
-  *, *::before, *::after { box-sizing: border-box; }
-  @page { size: A4; margin: 18mm 15mm 28mm 15mm; }
-  html, body { margin: 0; padding: 0; background: white; font-family: 'Montserrat', sans-serif; }
+  // Force exact widths & remove screen-only decoration
+  clone.style.cssText = 'width:794px;box-shadow:none;border-radius:0;background:#fff;';
+  clone.style.fontFamily = "'Montserrat', sans-serif";
 
-  .cv {
-    width: 100% !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    color: #1a1a1a;
+  // Place off-screen so html2canvas can measure it
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;top:-99999px;left:0;width:794px;z-index:-1;';
+  wrap.appendChild(clone);
+  document.body.appendChild(wrap);
+
+  const logoSrc = LOGO_SRC; // captured for use in then()
+
+  try {
+    await html2pdf()
+      .set({
+        margin:    [14, 14, 20, 14],   // top/right/bottom/left in mm — bottom leaves room for footer
+        filename:  name + '.pdf',
+        image:     { type: 'jpeg', quality: 0.99 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          // Force background colors to render (fixes gray boxes)
+          onclone: (clonedDoc) => {
+            clonedDoc.querySelectorAll('.cv-tech').forEach(el => {
+              el.style.backgroundColor = '#f2f2f2';
+              el.style.background      = '#f2f2f2';
+            });
+          }
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: {
+          // Avoid cutting these elements across pages
+          avoid: ['.cv-co-block', '.cv-project', '.cv-tech', '.cv-ul',
+                  '.cv-sublabel', '.cv-institution', '.cv-lang-row']
+        }
+      })
+      .from(clone)
+      .toPdf()
+      .get('pdf')
+      .then(pdf => {
+        const n  = pdf.internal.getNumberOfPages();
+        const pw = pdf.internal.pageSize.getWidth();
+        const ph = pdf.internal.pageSize.getHeight();
+
+        for (let i = 1; i <= n; i++) {
+          pdf.setPage(i);
+
+          // Footer separator line
+          pdf.setDrawColor(220, 220, 220);
+          pdf.setLineWidth(0.3);
+          pdf.line(14, ph - 13, pw - 14, ph - 13);
+
+          // Contact info (right side)
+          pdf.setFont('helvetica', 'normal');
+          pdf.setFontSize(7.5);
+          pdf.setTextColor(136, 136, 136);
+          pdf.text('welcome@seven-pro.com    www.seven-pro.com', pw - 14, ph - 8, { align: 'right' });
+
+          // SEVENPRO brand (left side) — purple bold
+          pdf.setFont('helvetica', 'bold');
+          pdf.setFontSize(7.5);
+          pdf.setTextColor(107, 63, 160);
+          pdf.text('SEVENPRO', 14, ph - 8);
+        }
+      })
+      .save();
+
+    showToast('✅ PDF downloaded!');
+  } catch (e) {
+    console.error(e);
+    showToast('❌ ' + e.message);
+  } finally {
+    document.body.removeChild(wrap);
   }
-  .cv-hdr { padding: 0 0 14px !important; }
-  .cv-body { padding: 0 0 8mm !important; }
-
-  /* Footer fixed at bottom of EVERY page */
-  .cv-print-ftr {
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    height: 22px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-top: 1px solid #e8e8e8;
-    background: white;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 8pt;
-    color: #888;
-    padding: 0 15mm;
-  }
-  .cv-print-ftr img { height: 14px; width: auto; }
-
-  /* Page break rules */
-  .cv-sec-title          { page-break-after: avoid; break-after: avoid; }
-  .cv-sublabel           { page-break-after: avoid; break-after: avoid; }
-  .cv-sublabel + *       { page-break-before: avoid; break-before: avoid; }
-  .cv-co-block           { page-break-inside: avoid; break-inside: avoid; }
-  .cv-project            { page-break-inside: avoid; break-inside: avoid; }
-  .cv-ul                 { page-break-inside: avoid; break-inside: avoid; }
-  .cv-section-divider    { page-break-after: avoid; break-after: avoid; }
-  .cv-tech               { page-break-inside: avoid; break-inside: avoid; }
-  strong                 { font-weight: 700; }
-</style>
-</head>
-<body>
-${cvEl.outerHTML.replace('class="cv"','class="cv" style=""')}
-<div class="cv-print-ftr">
-  <img src="${LOGO_SRC}" alt="SevenPro">
-  <span>welcome@seven-pro.com &nbsp;&nbsp; www.seven-pro.com</span>
-</div>
-</body></html>`;
-
-  const win = window.open('', '_blank', 'width=900,height=700');
-  if (!win) { showToast('❌ Pop-ups blocked — please allow pop-ups'); return; }
-  win.document.open();
-  win.document.write(printHtml);
-  win.document.close();
-  win.addEventListener('load', () => setTimeout(() => {
-    win.focus();
-    win.print();
-  }, 900));
-  showToast('⏳ Opening print dialog…');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PREVIEW
 // ─────────────────────────────────────────────────────────────────────────────
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-// renderText: supports **bold** markdown + preserves line breaks
-function renderText(s){
-  if(!s) return '';
-  return esc(s)
-    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
-    .replace(/\n/g,'<br>');
-}
-// stripBold: removes **markers** for clean DOCX output
-function stripBold(s){ return s ? s.replace(/\*\*([^*]+)\*\*/g,'$1') : ''; }
+function renderText(s){if(!s)return'';return esc(s).replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');}
+function stripBold(s){return s?s.replace(/\*\*([^*]+)\*\*/g,'$1'):'';}
 let previewTimer=null;
 function schedulePreview(){clearTimeout(previewTimer);previewTimer=setTimeout(buildPreview,300);}
 
@@ -403,20 +402,14 @@ function buildPreview() {
   // Interview insights
   if (s.show.insights && (s.recruitmentFeedback||s.technicalFeedback)) {
     h+=`<div class="cv-sec-title">Interview insights</div>`;
-    if(s.recruitmentFeedback) h+=`<div class="cv-sublabel">Recruitment feedback:</div><div class="cv-text" style="margin-bottom:14pt">${renderText(s.recruitmentFeedback)}</div>`;
-    if(s.technicalFeedback)   h+=`<div class="cv-sublabel">Technical feedback:</div><div class="cv-text" style="margin-bottom:8pt">${renderText(s.technicalFeedback)}</div>`;
+    if(s.recruitmentFeedback) h+=`<div class="cv-sublabel">Recruitment feedback:</div><div class="cv-text">${esc(s.recruitmentFeedback)}</div>`;
+    if(s.technicalFeedback)   h+=`<div class="cv-sublabel">Technical feedback:</div><div class="cv-text" style="margin-bottom:8pt">${esc(s.technicalFeedback)}</div>`;
   }
 
-  // Technical skills — items in gray box, no redundant label
-  if (s.show.skills && s.skillGroups && s.skillGroups.length) {
+  // Technical skills
+  if (s.show.skills && s.technicalSkills.length) {
     h+=`<hr class="cv-section-divider"><div class="cv-sec-title">Technical skills</div>`;
-    s.skillGroups.forEach(g=>{
-      h+=`<div class="cv-skill-line"><span class="cv-skill-lbl">${esc(g.label)}:&nbsp;&nbsp;</span></div>`;
-      h+=`<div class="cv-tech" style="margin-bottom:8pt">${esc(dot(g.items))}</div>`;
-    });
-  } else if (s.show.skills && s.technicalSkills && s.technicalSkills.length) {
-    h+=`<hr class="cv-section-divider"><div class="cv-sec-title">Technical skills</div>`;
-    h+=`<div class="cv-tech" style="margin-bottom:8pt">${esc(dot(s.technicalSkills))}</div>`;
+    h+=`<div class="cv-skill-line"><span class="cv-skill-lbl">Technical Skills:&nbsp;&nbsp;</span><span class="cv-skill-val">${esc(dot(s.technicalSkills))}</span></div>`;
   }
 
   // Professional experience
@@ -448,7 +441,7 @@ function buildPreview() {
         h+=`<div class="cv-role">${esc(p.role)}</div>`;
         if(p.description){
           h+=`<div class="cv-sublabel">Project Description</div>
-              <div class="cv-text" style="margin-bottom:10pt">${renderText(p.description)}</div>`;
+              <div class="cv-text" style="margin-bottom:10pt">${esc(p.description)}</div>`;
         }
         if(p.technologies.length){
           h+=`<div class="cv-sublabel" style="margin-bottom:3pt">Technologies</div>
@@ -458,7 +451,7 @@ function buildPreview() {
         if(rs.length){
           h+=`<div class="cv-sublabel" style="margin-bottom:3pt">Responsibilities</div>
               <ul class="cv-ul">`;
-          rs.forEach(r=>{h+=`<li>${renderText(r)}</li>`;});
+          rs.forEach(r=>{h+=`<li>${esc(r)}</li>`;});
           h+=`</ul>`;
         }
         h+=`</div>`;
@@ -754,7 +747,7 @@ function buildForm(){
     <div class="field">
       <label>Recruitment Feedback</label>
       <textarea rows="4" oninput="state.recruitmentFeedback=this.value;schedulePreview()">${esc(state.recruitmentFeedback)}</textarea>
-      <div class="hint">Enter = new line &nbsp;·&nbsp; <strong>**bold text**</strong> = bold in preview/PDF</div>
+      <div class="hint">Enter creates a new line in the DOCX output</div>
     </div>
     <div class="field">
       <label>Technical Feedback</label>
