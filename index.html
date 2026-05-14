@@ -215,9 +215,9 @@ function collectData() {
   return {
     candidateName:       state.name || '',
     position:            state.position || '',
-    // Use \n in feedback — docxtemplater linebreaks:true converts to DOCX line breaks
-    recruitmentFeedback: sh.insights ? (state.recruitmentFeedback || '') : '',
-    technicalFeedback:   sh.insights ? (state.technicalFeedback   || '') : '',
+    // linebreaks:true converts \n to DOCX line breaks; strip **markers** so asterisks don't appear in Word
+    recruitmentFeedback: sh.insights ? stripBold(state.recruitmentFeedback || '') : '',
+    technicalFeedback:   sh.insights ? stripBold(state.technicalFeedback   || '') : '',
     skillGroups: sh.skills && state.technicalSkills.length
       ? [{label:'Technical Skills', items: dot(state.technicalSkills)}]
       : [],
@@ -408,14 +408,14 @@ function buildPreview() {
   // Interview insights
   if (s.show.insights && (s.recruitmentFeedback||s.technicalFeedback)) {
     h+=`<div class="cv-sec-title">Interview insights</div>`;
-    if(s.recruitmentFeedback) h+=`<div class="cv-sublabel">Recruitment feedback:</div><div class="cv-text">${esc(s.recruitmentFeedback)}</div>`;
-    if(s.technicalFeedback)   h+=`<div class="cv-sublabel">Technical feedback:</div><div class="cv-text" style="margin-bottom:8pt">${esc(s.technicalFeedback)}</div>`;
+    if(s.recruitmentFeedback) h+=`<div class="cv-sublabel">Recruitment feedback:</div><div class="cv-text" style="margin-bottom:14pt">${renderText(s.recruitmentFeedback)}</div>`;
+    if(s.technicalFeedback)   h+=`<div class="cv-sublabel">Technical feedback:</div><div class="cv-text" style="margin-bottom:8pt">${renderText(s.technicalFeedback)}</div>`;
   }
 
   // Technical skills
   if (s.show.skills && s.technicalSkills.length) {
     h+=`<hr class="cv-section-divider"><div class="cv-sec-title">Technical skills</div>`;
-    h+=`<div class="cv-skill-line"><span class="cv-skill-lbl">Technical Skills:&nbsp;&nbsp;</span><span class="cv-skill-val">${esc(dot(s.technicalSkills))}</span></div>`;
+    h+=`<div class="cv-tech">${esc(dot(s.technicalSkills))}</div>`;
   }
 
   // Professional experience
@@ -753,11 +753,12 @@ function buildForm(){
     <div class="field">
       <label>Recruitment Feedback</label>
       <textarea rows="4" oninput="state.recruitmentFeedback=this.value;schedulePreview()">${esc(state.recruitmentFeedback)}</textarea>
-      <div class="hint">Enter creates a new line in the DOCX output</div>
+      <div class="hint">Use **text** to <strong>bold</strong> · Enter for new line</div>
     </div>
     <div class="field">
       <label>Technical Feedback</label>
       <textarea rows="4" oninput="state.technicalFeedback=this.value;schedulePreview()">${esc(state.technicalFeedback)}</textarea>
+      <div class="hint">Use **text** to <strong>bold</strong> · Enter for new line</div>
     </div>`));
 
   root.appendChild(mkCard('skills','⚙️','ic-a','Technical Skills','skills',true,`
