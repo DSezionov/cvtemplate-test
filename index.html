@@ -9,6 +9,7 @@
 <script src="https://unpkg.com/pizzip@3.1.4/dist/pizzip.js"></script>
 <script src="https://unpkg.com/docxtemplater@3.45.1/build/docxtemplater.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{--red:#EF4A37;--purple:#6B3FA0;--dark:#1A1A1A;--gray:#666;--border:#E8E8E8;--bg:#F4F3F1;--card:#fff;--f:'Montserrat',system-ui,sans-serif;}
@@ -160,8 +161,7 @@ textarea{resize:vertical;min-height:72px;line-height:1.5;}
     <span class="tb-title">CV Generator</span>
     <div class="tb-actions">
       <button class="btn btn-secondary btn-mob" onclick="toggleMob()">👁 Preview</button>
-      <button class="btn btn-secondary" onclick="genPdf()">↓ PDF</button>
-      <button class="btn btn-primary"   onclick="genDocx()">↓ DOCX</button>
+      <button class="btn btn-primary" onclick="genPdf()">↓ PDF</button>
     </div>
   </div>
   <div class="panels">
@@ -301,7 +301,10 @@ async function genPdf() {
   // This also makes left-alignment identical to the body content automatically.
   const hdrEl = document.querySelector('#cvOut .cv-hdr');
   const ftrEl = document.querySelector('#cvOut .cv-ftr');
-  const canvasOpts = { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff', logging: false };
+  if (!hdrEl || !ftrEl) { showToast('❌ Preview not ready — try again'); return; }
+  // Only scale + background needed: header/footer contain only base64 images and
+  // already-loaded fonts, so no external fetching is required.
+  const canvasOpts = { scale: 2, backgroundColor: '#ffffff', logging: false };
   const [hdrCanvas, ftrCanvas] = await Promise.all([
     html2canvas(hdrEl, canvasOpts),
     html2canvas(ftrEl, canvasOpts)
