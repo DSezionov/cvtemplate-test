@@ -115,6 +115,8 @@ textarea{resize:vertical;min-height:72px;line-height:1.5;}
 /* Project / company blocks */
 .cv-project{padding-bottom:10pt;margin-bottom:4pt;}
 .cv-co-block{padding-bottom:6pt;}
+/* Prevent page-break inside key CV elements */
+.cv-co-block,.cv-tech,.cv-ul,.cv-sublabel,.cv-institution,.cv-lang-row,.cv-text,.cv-role,.cv-exp-row{page-break-inside:avoid;break-inside:avoid;}
 /* Education/Cert items (school/certName before=4pt after=1pt) */
 .cv-institution{font-size:12pt;font-weight:600;color:#1a1a1a;margin:4pt 0 1pt;line-height:1.3;}
 /* period/degree (after=1pt, 8pt) */
@@ -130,8 +132,8 @@ textarea{resize:vertical;min-height:72px;line-height:1.5;}
 .cv-section-divider{border:none;border-top:1px solid #dddddd;margin:0 -36px;}
 /* Between projects within the same company — spacing only, no visible line */
 .cv-proj-divider{border:none;margin:20pt 0 0;}
-/* Between different companies — more prominent */
-.cv-co-divider{border:none;border-top:1.5px solid #d0d0d0;margin:18pt -36px 0;}
+/* Between different companies — spacing only, no line */
+.cv-co-divider{border:none;margin:28pt 0 0;}
 .cv-ftr{border-top:1px solid #e8e8e8;padding:10px 36px;display:flex;justify-content:space-between;align-items:center;}
 .toast{position:fixed;bottom:20px;right:20px;background:#1A1A1A;color:#fff;padding:10px 16px;border-radius:8px;font-size:12px;font-family:var(--f);opacity:0;transform:translateY(6px);transition:all .2s;pointer-events:none;z-index:999;max-width:280px;}
 .toast.show{opacity:1;transform:translateY(0);}
@@ -351,6 +353,7 @@ async function genPdf() {
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: {
+          mode: ['css', 'legacy'],
           avoid: ['.cv-co-block', '.cv-project', '.cv-tech', '.cv-ul',
                   '.cv-sublabel', '.cv-institution', '.cv-lang-row',
                   '.cv-text', '.cv-role', '.cv-exp-row']
@@ -708,6 +711,20 @@ function togglePr(ci,pi){const b=ge(`pb_${ci}_${pi}`),a=ge(`parr_${ci}_${pi}`);b
 
 function rsec(id,html){const b=ge(id+'_b');if(b)b.innerHTML=html;}
 
+function saveAccordions(){
+  const s={};
+  document.querySelectorAll('#exp_b .co-body.open,#exp_b .pr-body.open').forEach(el=>{if(el.id)s[el.id]=1;});
+  return s;
+}
+function restoreAccordions(s){
+  Object.keys(s).forEach(id=>{
+    const el=ge(id);if(!el)return;
+    el.classList.add('open');
+    const arrId=id.replace(/^cb_/,'coarr_').replace(/^pb_/,'parr_');
+    const arr=ge(arrId);if(arr)arr.textContent='▲';
+  });
+}
+
 function initProjTags(){
   state.experiences.forEach((co,ci)=>{
     (co.projects||[]).forEach((p,pi)=>{
@@ -720,10 +737,31 @@ function initProjTags(){
 // ─────────────────────────────────────────────────────────────────────────────
 // CRUD
 // ─────────────────────────────────────────────────────────────────────────────
-function addCompany(){state.experiences.push({company:'',projects:[{role:'',dateRange:'',description:'',technologies:[],responsibilities:['']}]});rsec('exp',buildExpHtml());initProjTags();schedulePreview();}
-function rmCompany(ev,ci){ev.stopPropagation();if(state.experiences.length<=1)return;state.experiences.splice(ci,1);rsec('exp',buildExpHtml());initProjTags();schedulePreview();}
-function addProject(ci){state.experiences[ci].projects.push({role:'',dateRange:'',description:'',technologies:[],responsibilities:['']});rsec('exp',buildExpHtml());initProjTags();schedulePreview();}
-function rmProject(ev,ci,pi){ev.stopPropagation();if(state.experiences[ci].projects.length<=1)return;state.experiences[ci].projects.splice(pi,1);rsec('exp',buildExpHtml());initProjTags();schedulePreview();}
+function addCompany(){
+  state.experiences.push({company:'',projects:[{role:'',dateRange:'',description:'',technologies:[],responsibilities:['']}]});
+  const oa=saveAccordions();rsec('exp',buildExpHtml());restoreAccordions(oa);
+  const ni=state.experiences.length-1;
+  ge('cb_'+ni)?.classList.add('open');ge('coarr_'+ni)?.textContent='▲';
+  ge(`pb_${ni}_0`)?.classList.add('open');ge(`parr_${ni}_0`)?.textContent='▲';
+  initProjTags();schedulePreview();
+}
+function rmCompany(ev,ci){
+  ev.stopPropagation();if(state.experiences.length<=1)return;
+  const oa=saveAccordions();state.experiences.splice(ci,1);rsec('exp',buildExpHtml());restoreAccordions(oa);
+  initProjTags();schedulePreview();
+}
+function addProject(ci){
+  state.experiences[ci].projects.push({role:'',dateRange:'',description:'',technologies:[],responsibilities:['']});
+  const oa=saveAccordions();rsec('exp',buildExpHtml());restoreAccordions(oa);
+  const ni=state.experiences[ci].projects.length-1;
+  ge(`pb_${ci}_${ni}`)?.classList.add('open');ge(`parr_${ci}_${ni}`)?.textContent='▲';
+  initProjTags();schedulePreview();
+}
+function rmProject(ev,ci,pi){
+  ev.stopPropagation();if(state.experiences[ci].projects.length<=1)return;
+  const oa=saveAccordions();state.experiences[ci].projects.splice(pi,1);rsec('exp',buildExpHtml());restoreAccordions(oa);
+  initProjTags();schedulePreview();
+}
 function addEdu(){state.education.push({school:'',period:'',degree:''});rsec('edu',buildEduHtml());schedulePreview();}
 function rmEdu(i){state.education.splice(i,1);rsec('edu',buildEduHtml());schedulePreview();}
 function addCert(){state.certifications.push({certName:'',year:''});rsec('cert',buildCertHtml());schedulePreview();}
