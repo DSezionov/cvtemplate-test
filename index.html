@@ -128,8 +128,8 @@ textarea{resize:vertical;min-height:72px;line-height:1.5;}
 .cv-lang-val{font-size:11pt;font-weight:400;color:#666666;}
 /* Divider (matches template empty para with border-bottom) */
 .cv-section-divider{border:none;border-top:1px solid #dddddd;margin:0 -36px;}
-/* Between projects within the same company — subtle dashed */
-.cv-proj-divider{border:none;border-top:1px dashed #e8e8e8;margin:12pt -36px 0;}
+/* Between projects within the same company — spacing only, no visible line */
+.cv-proj-divider{border:none;margin:20pt 0 0;}
 /* Between different companies — more prominent */
 .cv-co-divider{border:none;border-top:1.5px solid #d0d0d0;margin:18pt -36px 0;}
 .cv-ftr{border-top:1px solid #e8e8e8;padding:10px 36px;display:flex;justify-content:space-between;align-items:center;}
@@ -317,7 +317,7 @@ async function genPdf() {
   const px2mm = CONTENT_W / hdrCanvas.width;
   const hdrH  = hdrCanvas.height * px2mm;
   const ftrH  = ftrCanvas.height * px2mm;
-  const GAP   = 2; // mm breathing room between stamp and body text
+  const GAP   = 5; // mm breathing room between stamp and body text
   const topM  = Math.ceil(hdrH) + GAP;
   const botM  = Math.ceil(ftrH) + GAP;
 
@@ -352,7 +352,8 @@ async function genPdf() {
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: {
           avoid: ['.cv-co-block', '.cv-project', '.cv-tech', '.cv-ul',
-                  '.cv-sublabel', '.cv-institution', '.cv-lang-row']
+                  '.cv-sublabel', '.cv-institution', '.cv-lang-row',
+                  '.cv-text', '.cv-role', '.cv-exp-row']
         }
       })
       .from(clone)
@@ -418,7 +419,6 @@ function buildPreview() {
 
   // Professional experience
   if (s.show.experience && s.experiences.length) {
-    h+=`<hr class="cv-section-divider"><div class="cv-sec-title">Professional experience</div>`;
     s.experiences.forEach((co,ci)=>{
       // Divider BETWEEN companies (not before the first one)
       if(ci>0) h+=`<hr class="cv-co-divider">`;
@@ -428,6 +428,11 @@ function buildPreview() {
         if(pi>0) h+=`<hr class="cv-proj-divider">`;
 
         h+=`<div class="cv-co-block">`;
+
+        // Section title only on very first block so it stays glued to content
+        if(ci===0 && pi===0){
+          h+=`<hr class="cv-section-divider"><div class="cv-sec-title">Professional experience</div>`;
+        }
 
         // Company name only on FIRST project of this company
         if(pi===0){
@@ -567,12 +572,7 @@ function buildExpHtml(){
     const coLbl=co.company||`Company ${ci+1}`;
     let projH='';
     (co.projects||[]).forEach((p,pi)=>{
-      const respH=(p.responsibilities||[]).map((r,ri)=>`
-        <div class="ri">
-          <input type="text" value="${esc(r)}" placeholder="Responsibility…"
-            oninput="state.experiences[${ci}].projects[${pi}].responsibilities[${ri}]=this.value;schedulePreview()">
-          <button class="btn btn-ghost" onclick="rmResp(${ci},${pi},${ri})">✕</button>
-        </div>`).join('');
+      const respText=(p.responsibilities||[]).filter(r=>r.trim()).join('\n');
       projH+=`<div class="pr-card">
         <div class="pr-head" onclick="togglePr(${ci},${pi})">
           <span>Project ${pi+1}</span>
@@ -600,8 +600,9 @@ function buildExpHtml(){
             <div class="hint">Enter or comma to add · Paste to add multiple at once</div>
           </div>
           <div class="field"><label>Responsibilities</label>
-            <div class="rl" id="prl_${ci}_${pi}">${respH}</div>
-            <button class="btn btn-outline" style="margin-top:5px;width:fit-content" onclick="addResp(${ci},${pi})">+ Add responsibility</button>
+            <textarea rows="5" placeholder="One responsibility per line…"
+              oninput="state.experiences[${ci}].projects[${pi}].responsibilities=this.value.split('\n');schedulePreview()">${respText}</textarea>
+            <div class="hint">One item per line</div>
           </div>
         </div>
       </div>`;
@@ -723,8 +724,6 @@ function addCompany(){state.experiences.push({company:'',projects:[{role:'',date
 function rmCompany(ev,ci){ev.stopPropagation();if(state.experiences.length<=1)return;state.experiences.splice(ci,1);rsec('exp',buildExpHtml());initProjTags();schedulePreview();}
 function addProject(ci){state.experiences[ci].projects.push({role:'',dateRange:'',description:'',technologies:[],responsibilities:['']});rsec('exp',buildExpHtml());initProjTags();schedulePreview();}
 function rmProject(ev,ci,pi){ev.stopPropagation();if(state.experiences[ci].projects.length<=1)return;state.experiences[ci].projects.splice(pi,1);rsec('exp',buildExpHtml());initProjTags();schedulePreview();}
-function addResp(ci,pi){state.experiences[ci].projects[pi].responsibilities.push('');rsec('exp',buildExpHtml());initProjTags();schedulePreview();}
-function rmResp(ci,pi,ri){state.experiences[ci].projects[pi].responsibilities.splice(ri,1);rsec('exp',buildExpHtml());initProjTags();schedulePreview();}
 function addEdu(){state.education.push({school:'',period:'',degree:''});rsec('edu',buildEduHtml());schedulePreview();}
 function rmEdu(i){state.education.splice(i,1);rsec('edu',buildEduHtml());schedulePreview();}
 function addCert(){state.certifications.push({certName:'',year:''});rsec('cert',buildCertHtml());schedulePreview();}
