@@ -371,6 +371,7 @@ async function genPdf() {
         const pw = pdf.internal.pageSize.getWidth();
         const ph = pdf.internal.pageSize.getHeight();
         pdf.setFillColor(255, 255, 255);
+        pdf.setDrawColor(255, 255, 255);
         for (let i = 1; i <= n; i++) {
           pdf.setPage(i);
           // White out the full top and bottom margin zones so any overflowing
