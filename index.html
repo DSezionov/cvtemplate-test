@@ -360,7 +360,7 @@ async function genPdf() {
           mode: ['css', 'legacy'],
           avoid: ['.cv-block', '.cv-co-block', '.cv-project', '.cv-tech', '.cv-ul',
                   '.cv-sublabel', '.cv-institution', '.cv-lang-row',
-                  '.cv-text', '.cv-role', '.cv-exp-row']
+                  '.cv-role', '.cv-exp-row']
         }
       })
       .from(clone)
@@ -414,8 +414,8 @@ function buildPreview() {
   // Interview insights
   if (s.show.insights && (s.recruitmentFeedback||s.technicalFeedback)) {
     h+=`<div class="cv-sec-title">Interview insights</div>`;
-    if(s.recruitmentFeedback) h+=`<div class="cv-block"><div class="cv-sublabel">Recruitment feedback:</div><div class="cv-text" style="margin-bottom:14pt">${renderText(s.recruitmentFeedback)}</div></div>`;
-    if(s.technicalFeedback)   h+=`<div class="cv-block"><div class="cv-sublabel">Technical feedback:</div><div class="cv-text" style="margin-bottom:8pt">${renderText(s.technicalFeedback)}</div></div>`;
+    if(s.recruitmentFeedback) h+=`<div class="cv-sublabel">Recruitment feedback:</div><div class="cv-text" style="margin-bottom:14pt">${renderText(s.recruitmentFeedback)}</div>`;
+    if(s.technicalFeedback)   h+=`<div class="cv-sublabel">Technical feedback:</div><div class="cv-text" style="margin-bottom:8pt">${renderText(s.technicalFeedback)}</div>`;
   }
 
   // Technical skills
@@ -455,8 +455,8 @@ function buildPreview() {
 
         h+=`<div class="cv-role">${esc(p.role)}</div>`;
         if(p.description){
-          h+=`<div class="cv-block"><div class="cv-sublabel">Project Description</div>
-              <div class="cv-text" style="margin-bottom:10pt">${esc(p.description)}</div></div>`;
+          h+=`<div class="cv-sublabel">Project Description</div>
+              <div class="cv-text" style="margin-bottom:10pt">${esc(p.description)}</div>`;
         }
         if(p.technologies.length){
           h+=`<div class="cv-block"><div class="cv-sublabel" style="margin-bottom:3pt">Technologies</div>
