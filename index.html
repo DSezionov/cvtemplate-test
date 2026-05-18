@@ -370,11 +370,14 @@ async function genPdf() {
         const n  = pdf.internal.getNumberOfPages();
         const pw = pdf.internal.pageSize.getWidth();
         const ph = pdf.internal.pageSize.getHeight();
+        pdf.setFillColor(255, 255, 255);
         for (let i = 1; i <= n; i++) {
           pdf.setPage(i);
-          // Header canvas image: placed in the top margin area, full content width
+          // White out the full top and bottom margin zones so any overflowing
+          // content is hidden before the header/footer images are stamped on top.
+          pdf.rect(0, 0, pw, topM, 'F');
+          pdf.rect(0, ph - botM, pw, botM, 'F');
           pdf.addImage(hdrDataUrl, 'PNG', SIDE_M, 0, CONTENT_W, hdrH);
-          // Footer canvas image: placed in the bottom margin area
           pdf.addImage(ftrDataUrl, 'PNG', SIDE_M, ph - ftrH, CONTENT_W, ftrH);
         }
       })
