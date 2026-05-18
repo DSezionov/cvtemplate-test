@@ -741,8 +741,8 @@ function addCompany(){
   state.experiences.push({company:'',projects:[{role:'',dateRange:'',description:'',technologies:[],responsibilities:['']}]});
   const oa=saveAccordions();rsec('exp',buildExpHtml());restoreAccordions(oa);
   const ni=state.experiences.length-1;
-  ge('cb_'+ni)?.classList.add('open');ge('coarr_'+ni)?.textContent='▲';
-  ge(`pb_${ni}_0`)?.classList.add('open');ge(`parr_${ni}_0`)?.textContent='▲';
+  ge('cb_'+ni)?.classList.add('open');const _ca=ge('coarr_'+ni);if(_ca)_ca.textContent='▲';
+  ge(`pb_${ni}_0`)?.classList.add('open');const _pa=ge(`parr_${ni}_0`);if(_pa)_pa.textContent='▲';
   initProjTags();schedulePreview();
 }
 function rmCompany(ev,ci){
@@ -754,7 +754,7 @@ function addProject(ci){
   state.experiences[ci].projects.push({role:'',dateRange:'',description:'',technologies:[],responsibilities:['']});
   const oa=saveAccordions();rsec('exp',buildExpHtml());restoreAccordions(oa);
   const ni=state.experiences[ci].projects.length-1;
-  ge(`pb_${ci}_${ni}`)?.classList.add('open');ge(`parr_${ci}_${ni}`)?.textContent='▲';
+  ge(`pb_${ci}_${ni}`)?.classList.add('open');const _pa2=ge(`parr_${ci}_${ni}`);if(_pa2)_pa2.textContent='▲';
   initProjTags();schedulePreview();
 }
 function rmProject(ev,ci,pi){
