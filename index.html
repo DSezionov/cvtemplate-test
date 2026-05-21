@@ -616,7 +616,7 @@ function buildExpHtml(){
           </div>
           <div class="field"><label>Responsibilities</label>
             <textarea rows="5" placeholder="One responsibility per line…"
-              oninput="state.experiences[${ci}].projects[${pi}].responsibilities=this.value.split('\n');schedulePreview()">${respText}</textarea>
+              oninput="state.experiences[${ci}].projects[${pi}].responsibilities=this.value.split('\\n');schedulePreview()">${respText}</textarea>
             <div class="hint">One item per line</div>
           </div>
         </div>
